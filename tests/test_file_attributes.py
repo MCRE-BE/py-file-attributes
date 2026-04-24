@@ -117,7 +117,7 @@ def test_in_cloud(temp_file):
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific test")
 def test_windows_specific_attributes(temp_file):
     """Test Windows-specific attributes like archive and compressed."""
-    file_attrs = FileAttributes(temp_file)
+    file_attrs = cast("Any", FileAttributes(temp_file))
 
     # Archive attribute
     file_attrs.set_archive(True)
