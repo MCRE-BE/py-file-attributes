@@ -6,7 +6,6 @@
 ####################
 import dataclasses
 import os
-import re
 import subprocess
 from pathlib import Path
 
@@ -121,8 +120,7 @@ class FileAttributesLinux(_FileAttributesUnix):
                 text=True,
                 check=True,
             )
-            match = re.search(r"[-a-zA-Z]+\s+.*?\s+(.*?)$", result.stdout)
-            return match.group(1) if match else ""
+            return result.stdout.split()[0] if result.stdout else ""
         except subprocess.CalledProcessError:
             return ""
 
