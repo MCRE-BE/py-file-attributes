@@ -120,7 +120,8 @@ class FileAttributesMacOS(_FileAttributesUnix):
                 text=True,
                 check=True,
             )
-            attributes = result.stdout.split()[-1].split(",")
+            parts = result.stdout.split()
+            attributes = parts[4].split(",") if len(parts) > 4 and parts[4] != "-" else []
         except subprocess.CalledProcessError:
             return []
         else:
