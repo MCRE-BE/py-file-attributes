@@ -1,0 +1,18 @@
+Explanation:
+Fixtures: The temp_file fixture creates a temporary file for testing and ensures it is cleaned up after the tests.
+
+Cross-Platform Tests:
+
+test_read_only: Tests setting and getting the read-only attribute.
+test_hidden: Tests setting and getting the hidden attribute.
+test_executable: Tests setting and getting the executable attribute (skipped on Windows).
+test_immutable: Tests setting and getting the immutable attribute (skipped on Windows).
+test_append_only: Tests setting and getting the append-only attribute (skipped on Windows).
+test_no_dump: Tests setting and getting the no-dump attribute (skipped on Windows).
+test_directory: Tests checking if a path is a directory.
+test_symlink: Tests checking if a path is a symbolic link.
+Platform-Specific Tests:
+
+test_windows_specific_attributes: Tests Windows-specific attributes like system, archive, and compressed.
+test_macos_specific_attributes: Tests macOS-specific attributes like immutable, append_only, and no_dump.
+test_linux_specific_attributes: Tests Linux-specific attributes like immutable, append_only, and no_dump.
