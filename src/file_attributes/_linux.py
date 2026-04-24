@@ -6,7 +6,6 @@
 ####################
 import dataclasses
 import os
-import re
 import subprocess
 from pathlib import Path
 
@@ -121,8 +120,7 @@ class FileAttributesLinux(_FileAttributesUnix):
                 text=True,
                 check=True,
             )
-            match = re.search(r"[-a-zA-Z]+\s+.*?\s+(.*?)$", result.stdout)
-            return match.group(1) if match else ""
+            return result.stdout.split()[0] if result.stdout else ""
         except subprocess.CalledProcessError:
             return ""
 
@@ -199,7 +197,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         enable : bool
             True to enable the immutable attribute, False to disable it.
         """
-        self.set_file_attributes("+i" if enable else "-i")
+        self.set_file_attributes("i", enable)
 
     def set_append_only(self: Self, enable: bool) -> None:
         """Set or unset the append-only attribute.
@@ -209,7 +207,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         enable : bool
             True to enable the append-only attribute, False to disable it.
         """
-        self.set_file_attributes("+a" if enable else "-a")
+        self.set_file_attributes("a", enable)
 
     def set_no_dump(self: Self, enable: bool) -> None:
         """Set or unset the no dump attribute.
@@ -219,7 +217,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         enable : bool
             True to enable the no dump attribute, False to disable it.
         """
-        self.set_file_attributes("+d" if enable else "-d")
+        self.set_file_attributes("d", enable)
 
     # ... Add specific functions for cloud...
     @property

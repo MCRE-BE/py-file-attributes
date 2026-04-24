@@ -153,7 +153,8 @@ class FileAttributesWindows(_FileAttributesCore):
         Returns an integer, but the real data is stored in binary format.
         Credits to https://stackoverflow.com/a/77225871/20716078
         """
-        _t = ctypes.windll.kernel32.GetFileAttributesW(str(path))
+        windll = getattr(ctypes, "windll")  # noqa: B009
+        _t = windll.kernel32.GetFileAttributesW(str(path))
         return _t or 0
 
     def set_file_attributes(
@@ -169,7 +170,8 @@ class FileAttributesWindows(_FileAttributesCore):
         attributes : int
             The file attributes to set.
         """
-        ctypes.windll.kernel32.SetFileAttributesW(str(self.file), attributes)
+        windll = getattr(ctypes, "windll")  # noqa: B009
+        windll.kernel32.SetFileAttributesW(str(self.file), attributes)
 
     def set_attribute(
         self: Self,

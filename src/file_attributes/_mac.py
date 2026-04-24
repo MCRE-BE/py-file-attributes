@@ -120,7 +120,8 @@ class FileAttributesMacOS(_FileAttributesUnix):
                 text=True,
                 check=True,
             )
-            attributes = result.stdout.split()[-1].split(",")
+            parts = result.stdout.split()
+            attributes = parts[4].split(",") if len(parts) > 4 and parts[4] != "-" else []
         except subprocess.CalledProcessError:
             return []
         else:
@@ -149,8 +150,9 @@ class FileAttributesMacOS(_FileAttributesUnix):
                     check=True,
                 )
             else:
+                disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
                 subprocess.run(
-                    ["sudo", "chflags", "no" + attr, str(self.file)],
+                    ["sudo", "chflags", disable_attr, str(self.file)],
                     check=True,
                 )
         self.extended_attributes = self.get_file_attributes(self.file)
