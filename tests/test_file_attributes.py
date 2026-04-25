@@ -13,7 +13,6 @@ Cross-Platform Tests:
 - test_append_only: Tests setting and getting the append-only attribute (skipped on Windows).
 - test_no_dump: Tests setting and getting the no-dump attribute (skipped on Windows).
 - test_directory: Tests checking if a path is a directory.
-- test_symlink: Tests checking if a path is a symbolic link.
 
 Platform-Specific Tests:
 
@@ -83,20 +82,6 @@ def test_directory(temp_file, temp_dir):
 
     dir_attrs = FileAttributes(temp_dir)
     assert dir_attrs.directory, "Failed to identify directory"
-
-
-# def test_symlink(temp_file):
-#     """Test if a path is correctly identified as a symbolic link."""
-#     file_attrs = FileAttributes(temp_file)
-#     assert not file_attrs.symlink, "Non-symlink path incorrectly identified as symlink"
-
-#     temp_link = temp_file.parent / "temp_link"
-#     temp_link.symlink_to(temp_file)
-
-#     link_attrs = FileAttributes(temp_link)
-#     assert link_attrs.symlink, "Symlink path not identified correctly"
-
-#     temp_link.unlink()
 
 
 def test_in_cloud(temp_file):
