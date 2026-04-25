@@ -82,19 +82,16 @@ def download_offline_file(
     # Check if file is available on the drive, otherwise trigger its download.
     # Retry several times
     if fileattributes.in_cloud:
-        test_counter = 0
-        while test_counter < RETRY_MAX:
+        for test_counter in range(RETRY_MAX):
             try:
                 with builtins.open(file, READ_MODE):
-                    pass
-                break
-            except OSError:
-                pass
-            finally:
-                test_counter += 1
+                    return
+            except OSError:  # noqa: PERF203
+                if test_counter == RETRY_MAX - 1:
+                    raise OSError(
+                        f"Unable to retrieve {file.as_posix()} from cloud storage. Retry policy exceeded.",
+                    ) from None
                 time.sleep(RETRY_DELAY)
-        else:
-            raise OSError(f"Unable to retrieve {file.as_posix()} from cloud storage. Retry policy exceeded.")
 
 
 def download_offline_files_sequential(
