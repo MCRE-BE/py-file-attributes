@@ -89,12 +89,12 @@ def download_offline_file(
                     pass
                 break
             except OSError:
-                continue
+                pass
             finally:
                 test_counter += 1
                 time.sleep(RETRY_DELAY)
-                if test_counter > RETRY_MAX:
-                    raise OSError(f"Unable to retrieve {file.as_posix()} from cloud storage. Retry policy exceeded.")
+        else:
+            raise OSError(f"Unable to retrieve {file.as_posix()} from cloud storage. Retry policy exceeded.")
 
 
 def download_offline_files_sequential(
