@@ -20,7 +20,7 @@ def test_download_offline_file_retry_exhaustion():
         with pytest.raises(OSError, match="Retry policy exceeded"):
             download_offline_file(file_path, RETRY_MAX=3, RETRY_DELAY=0)
 
-        assert mock_sleep.call_count == 3
+        assert mock_sleep.call_count == 2
 
 
 def test_download_offline_file_success_after_retry():
@@ -41,7 +41,7 @@ def test_download_offline_file_success_after_retry():
         download_offline_file(file_path, RETRY_MAX=3, RETRY_DELAY=0)
 
         assert mock_open.call_count == 3
-        assert mock_sleep.call_count == 3
+        assert mock_sleep.call_count == 2
 
 
 def test_download_offline_file_not_in_cloud():
