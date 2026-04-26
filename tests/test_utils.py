@@ -93,7 +93,6 @@ def test_download_offline_file_error_path():
 from file_attributes.utils import (
     FileRecallManager,
     download_offline_files_parallel,
-    download_offline_files_sequential,
 )
 
 
