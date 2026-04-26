@@ -86,7 +86,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
             # since some macOS utilities (like chflags) do not support the `--` separator.
             safe_path = str(path.absolute()) if hasattr(path, "absolute") else str(Path(path).absolute())
             result = subprocess.run(
-                ["ls", "-lO", safe_path],
+                ["ls", "-lO", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -118,13 +118,13 @@ class FileAttributesMacOS(_FileAttributesUnix):
         for attr in attributes:
             if enable:
                 subprocess.run(
-                    ["sudo", "chflags", attr, safe_path],
+                    ["sudo", "chflags", "--", attr, safe_path],
                     check=True,
                 )
             else:
                 disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
                 subprocess.run(
-                    ["sudo", "chflags", disable_attr, safe_path],
+                    ["sudo", "chflags", "--", disable_attr, safe_path],
                     check=True,
                 )
         self.extended_attributes = self.get_file_attributes(self.file)
@@ -210,7 +210,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         try:
             safe_path = str(file_path.absolute()) if hasattr(file_path, "absolute") else str(Path(file_path).absolute())
             result = subprocess.run(
-                ["brctl", "query", "--id", safe_path],
+                ["brctl", "query", "--id", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -227,7 +227,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         try:
             safe_path = str(file_path.absolute()) if hasattr(file_path, "absolute") else str(Path(file_path).absolute())
             result = subprocess.run(
-                ["xattr", "-l", safe_path],
+                ["xattr", "-l", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
