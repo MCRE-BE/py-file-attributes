@@ -115,7 +115,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """
         try:
             result = subprocess.run(
-                ["ls", "-lO", str(path)],
+                ["ls", "-lO", "--", str(path)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -237,7 +237,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """Check if icloud managed file is in the cloud."""
         try:
             result = subprocess.run(
-                ["brctl", "query", "--id", str(file_path)],
+                ["brctl", "query", "--id", "--", str(file_path)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -253,7 +253,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """Check if OneDrive managed file is in the cloud."""
         try:
             result = subprocess.run(
-                ["xattr", "-l", str(file_path)],
+                ["xattr", "-l", "--", str(file_path)],
                 capture_output=True,
                 text=True,
                 check=True,

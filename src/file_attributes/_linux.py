@@ -115,7 +115,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         """
         try:
             result = subprocess.run(
-                ["lsattr", str(path)],
+                ["lsattr", "--", str(path)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -144,7 +144,7 @@ class FileAttributesLinux(_FileAttributesUnix):
             try:
                 # attr should be just the name, we add + or - based on enable
                 cmd = f"{'+' if enable else '-'}{attr}"
-                subprocess.run(["sudo", "chattr", cmd, str(self.file)], check=True)
+                subprocess.run(["sudo", "chattr", cmd, "--", str(self.file)], check=True)
             except subprocess.CalledProcessError as e:  # noqa: PERF203
                 raise ValueError(f"Failed to set attribute: {attr}") from e
             except FileNotFoundError as e:
@@ -234,7 +234,7 @@ class FileAttributesLinux(_FileAttributesUnix):
 
         try:
             result = subprocess.run(
-                ["rclone", "lsjson", str(file_path)],
+                ["rclone", "lsjson", "--", str(file_path)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -252,7 +252,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         """Check if OneDrive managed file is in the cloud."""
         try:
             result = subprocess.run(
-                ["xattr", "-l", str(file_path)],
+                ["xattr", "-l", "--", str(file_path)],
                 capture_output=True,
                 text=True,
                 check=True,
