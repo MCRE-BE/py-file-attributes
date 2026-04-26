@@ -50,7 +50,10 @@ class _FileAttributesCore:
         # Check that we give the uninstantiated class or that we get the head class.
         # If we don't do it, we don't get all the attributes
         if not isinstance(my_class, type):
-            return my_class._cached_property_fields
+            if hasattr(my_class, "_cached_property_fields"):
+                return my_class._cached_property_fields
+            my_class = type(my_class)
+
         return tuple(
             attr for attr, value in vars(my_class).items() if isinstance(value, property) and value.fget is not None
         )
