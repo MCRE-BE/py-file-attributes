@@ -5,7 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from file_attributes.utils import (
+    FileRecallManager,
     download_offline_file,
+    download_offline_files_parallel,
     download_offline_files_sequential,
 )
 
@@ -91,12 +93,6 @@ def test_download_offline_file_error_path():
         expected_msg = f"Unable to retrieve {file_path.as_posix()} from cloud storage. Retry policy exceeded."
         with pytest.raises(OSError, match=expected_msg):
             download_offline_file(file_path, RETRY_MAX=3, RETRY_DELAY=0)
-
-
-from file_attributes.utils import (
-    FileRecallManager,
-    download_offline_files_parallel,
-)
 
 
 def test_file_recall_manager_success():

@@ -41,8 +41,8 @@ def test_get_property_fields_no_properties():
             pass
 
     properties = _FileAttributesCore.get_property_fields(NoPropsClass)
-    assert properties == []
+    assert properties == ()
 
     instance = NoPropsClass()
     properties_instance = _FileAttributesCore.get_property_fields(instance)
-    assert properties_instance == []
+    assert properties_instance == ()

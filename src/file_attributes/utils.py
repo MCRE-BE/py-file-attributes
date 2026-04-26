@@ -125,8 +125,7 @@ def download_offline_files_sequential(
         after amount of tries is larger then RETRY_MAX, then fail.
     """
 
-    for x in to_download:
-        file = Path(x)
+    for file in [Path(x) for x in to_download]:
         download_offline_file(file, RETRY_MAX, RETRY_DELAY, READ_MODE)
 
 
@@ -166,7 +165,7 @@ def download_offline_files_parallel(
         download_offline_file(Path(to_download[0]), RETRY_MAX, RETRY_DELAY, READ_MODE)
 
     elif isinstance(to_download, list) and len(to_download) > 1:
-        _paths = (Path(x) for x in to_download)
+        _paths = [Path(x) for x in to_download]
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
                 executor.submit(download_offline_file, file, RETRY_MAX, RETRY_DELAY, READ_MODE) for file in _paths
