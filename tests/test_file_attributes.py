@@ -84,6 +84,21 @@ def test_directory(temp_file, temp_dir):
     assert dir_attrs.directory, "Failed to identify directory"
 
 
+def test_argument_injection():
+    """Test that file names starting with '-' do not cause argument injection errors."""
+    with tempfile.NamedTemporaryFile(prefix="-", delete=False) as temp:
+        temp_path = Path(temp.name)
+
+    file_attrs = FileAttributes(temp_path)
+    try:
+        # Verify read and write don't fail due to parameter injection
+        file_attrs.set_read_only(True)
+        assert file_attrs.read_only
+    finally:
+        file_attrs.set_read_only(False)
+        temp_path.unlink()
+
+
 def test_in_cloud(temp_file):
     """Test the `in_cloud` property.
 
