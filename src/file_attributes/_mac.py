@@ -114,8 +114,11 @@ class FileAttributesMacOS(_FileAttributesUnix):
             The extended file attributes as a list of strings.
         """
         try:
+            # We use absolute paths to prevent argument injection vulnerabilities (paths starting with `-`)
+            # since some macOS utilities (like chflags) do not support the `--` separator.
+            safe_path = str(path.absolute()) if hasattr(path, "absolute") else str(Path(path).absolute())
             result = subprocess.run(
-                ["ls", "-lO", "--", str(path)],
+                ["ls", "-lO", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -143,16 +146,17 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """
         if isinstance(attributes, str):
             attributes = [attributes]
+        safe_path = str(self.file.absolute()) if hasattr(self.file, "absolute") else str(Path(self.file).absolute())
         for attr in attributes:
             if enable:
                 subprocess.run(
-                    ["sudo", "chflags", attr, "--", str(self.file)],
+                    ["sudo", "chflags", attr, safe_path],
                     check=True,
                 )
             else:
                 disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
                 subprocess.run(
-                    ["sudo", "chflags", disable_attr, "--", str(self.file)],
+                    ["sudo", "chflags", disable_attr, safe_path],
                     check=True,
                 )
         self.extended_attributes = self.get_file_attributes(self.file)
@@ -236,8 +240,9 @@ class FileAttributesMacOS(_FileAttributesUnix):
     def is_icloud_file_in_cloud(file_path: Path | str) -> bool:
         """Check if icloud managed file is in the cloud."""
         try:
+            safe_path = str(file_path.absolute()) if hasattr(file_path, "absolute") else str(Path(file_path).absolute())
             result = subprocess.run(
-                ["brctl", "query", "--id", "--", str(file_path)],
+                ["brctl", "query", "--id", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -252,8 +257,9 @@ class FileAttributesMacOS(_FileAttributesUnix):
     def is_onedrive_file_in_cloud(file_path: Path | str) -> bool:
         """Check if OneDrive managed file is in the cloud."""
         try:
+            safe_path = str(file_path.absolute()) if hasattr(file_path, "absolute") else str(Path(file_path).absolute())
             result = subprocess.run(
-                ["xattr", "-l", "--", str(file_path)],
+                ["xattr", "-l", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
