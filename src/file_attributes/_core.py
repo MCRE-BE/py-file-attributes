@@ -12,12 +12,6 @@ from pathlib import Path
 from typing_extensions import Self
 
 
-@cache
-def _get_property_fields_for_class(cls: type) -> tuple[str, ...]:
-    """Cache the property fields for a given class."""
-    return tuple(attr for attr, value in vars(cls).items() if isinstance(value, property) and value.fget is not None)
-
-
 ###########
 # CLASSES #
 ###########
@@ -31,6 +25,14 @@ class _FileAttributesCore:
         """Initialize the FileAttributes instance."""
         if isinstance(self.file, str):
             self.file = Path(self.file)
+
+    @classmethod
+    @cache
+    def _cached_property_fields(cls) -> tuple[str, ...]:
+        """Cache the property fields for the class."""
+        return tuple(
+            attr for attr, value in vars(cls).items() if isinstance(value, property) and value.fget is not None
+        )
 
     # ... Helper Methods ...
     @staticmethod
@@ -49,7 +51,7 @@ class _FileAttributesCore:
         # If we don't do it, we don't get all the attributes
         if not isinstance(my_class, type):
             my_class = type(my_class)
-        return _get_property_fields_for_class(my_class)
+        return my_class._cached_property_fields()
 
 
 @dataclasses.dataclass(repr=False)
