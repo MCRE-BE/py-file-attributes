@@ -146,13 +146,13 @@ class FileAttributesMacOS(_FileAttributesUnix):
         for attr in attributes:
             if enable:
                 subprocess.run(
-                    ["sudo", "chflags", attr, "--", str(self.file)],
+                    ["sudo", "chflags", attr, str(self.file)],
                     check=True,
                 )
             else:
                 disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
                 subprocess.run(
-                    ["sudo", "chflags", disable_attr, "--", str(self.file)],
+                    ["sudo", "chflags", disable_attr, str(self.file)],
                     check=True,
                 )
         self.extended_attributes = self.get_file_attributes(self.file)
