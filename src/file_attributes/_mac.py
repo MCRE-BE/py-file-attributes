@@ -59,38 +59,6 @@ class FileAttributesMacOS(_FileAttributesUnix):
 
     """
 
-    # ... Magic Methods ...
-    def __repr__(self: Self) -> str:
-        """Return a string representation of the file attributes.
-
-        Returns
-        -------
-        str
-            A string representation of the file attributes.
-        """
-        result = f"{self.file.as_posix()}\n"
-        result += f"mode : {oct(self.mode)}\n"
-        result += f"extended_attributes : {self.extended_attributes}\n"
-        return result
-
-    def __str__(self: Self) -> str:
-        """Return a detailed string representation of the file attributes.
-
-        Returns
-        -------
-        str
-            A detailed string representation of the file attributes.
-        """
-        result = f"{self.file.as_posix()}\n"
-        result += f"mode : {oct(self.mode)}\n"
-        result += f"extended_attributes : {self.extended_attributes}\n"
-
-        attributes = self.get_property_fields(self)
-        for attr in attributes:
-            result += f"{attr}: {getattr(self, attr)}\n"
-        return result
-
-    # ... Helper Methods ...
     @staticmethod
     def get_file_attributes(path: Path) -> list[str]:
         """Retrieve the extended file attributes from the OS.
@@ -115,7 +83,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """
         try:
             result = subprocess.run(
-                ["ls", "-lO", str(path)],
+                ["ls", "-lO", "--", str(path)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -146,13 +114,13 @@ class FileAttributesMacOS(_FileAttributesUnix):
         for attr in attributes:
             if enable:
                 subprocess.run(
-                    ["sudo", "chflags", attr, str(self.file)],
+                    ["sudo", "chflags", "--", attr, str(self.file)],
                     check=True,
                 )
             else:
                 disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
                 subprocess.run(
-                    ["sudo", "chflags", disable_attr, str(self.file)],
+                    ["sudo", "chflags", "--", disable_attr, str(self.file)],
                     check=True,
                 )
         self.extended_attributes = self.get_file_attributes(self.file)
@@ -237,7 +205,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """Check if icloud managed file is in the cloud."""
         try:
             result = subprocess.run(
-                ["brctl", "query", "--id", str(file_path)],
+                ["brctl", "query", "--id", "--", str(file_path)],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -253,7 +221,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """Check if OneDrive managed file is in the cloud."""
         try:
             result = subprocess.run(
-                ["xattr", "-l", str(file_path)],
+                ["xattr", "-l", "--", str(file_path)],
                 capture_output=True,
                 text=True,
                 check=True,
