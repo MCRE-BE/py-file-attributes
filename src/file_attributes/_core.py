@@ -6,7 +6,7 @@
 import dataclasses
 import stat
 from abc import ABC, abstractmethod
-from functools import cache
+from functools import cached_property
 from pathlib import Path
 
 from typing_extensions import Self
@@ -26,12 +26,12 @@ class _FileAttributesCore:
         if isinstance(self.file, str):
             self.file = Path(self.file)
 
-    @classmethod
-    @cache
-    def _cached_property_fields(cls) -> tuple[str, ...]:
-        """Cache the property fields for the class."""
+    @cached_property
+    def _cached_property_fields(self) -> tuple[str, ...]:
+        """Cache the property fields for the instance."""
+        my_class = type(self)
         return tuple(
-            attr for attr, value in vars(cls).items() if isinstance(value, property) and value.fget is not None
+            attr for attr, value in vars(my_class).items() if isinstance(value, property) and value.fget is not None
         )
 
     # ... Helper Methods ...
@@ -50,8 +50,10 @@ class _FileAttributesCore:
         # Check that we give the uninstantiated class or that we get the head class.
         # If we don't do it, we don't get all the attributes
         if not isinstance(my_class, type):
-            my_class = type(my_class)
-        return my_class._cached_property_fields()
+            return my_class._cached_property_fields
+        return tuple(
+            attr for attr, value in vars(my_class).items() if isinstance(value, property) and value.fget is not None
+        )
 
 
 @dataclasses.dataclass(repr=False)
