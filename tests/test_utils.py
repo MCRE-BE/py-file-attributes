@@ -4,7 +4,24 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from file_attributes.utils import download_offline_file
+from file_attributes.utils import download_offline_file, download_offline_files_sequential
+
+
+def test_download_offline_files_sequential_success():
+    file_list = ["fake_file1.txt", Path("fake_file2.txt")]
+
+    with patch("file_attributes.utils.download_offline_file") as mock_download:
+        download_offline_files_sequential(file_list, RETRY_MAX=3, RETRY_DELAY=2, READ_MODE="r")
+
+        assert mock_download.call_count == 2
+        mock_download.assert_any_call(Path("fake_file1.txt"), 3, 2, "r")
+        mock_download.assert_any_call(Path("fake_file2.txt"), 3, 2, "r")
+
+
+def test_download_offline_files_sequential_empty():
+    with patch("file_attributes.utils.download_offline_file") as mock_download:
+        download_offline_files_sequential([])
+        mock_download.assert_not_called()
 
 
 def test_download_offline_file_retry_exhaustion():
@@ -76,7 +93,6 @@ def test_download_offline_file_error_path():
 from file_attributes.utils import (
     FileRecallManager,
     download_offline_files_parallel,
-    download_offline_files_sequential,
 )
 
 
