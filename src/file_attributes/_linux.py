@@ -82,7 +82,7 @@ class FileAttributesLinux(_FileAttributesUnix):
             The extended file attributes as a string.
         """
         try:
-            safe_path = str(path.absolute()) if hasattr(path, "absolute") else str(Path(path).absolute())
+            safe_path = str(Path(path).absolute())
             result = subprocess.run(
                 ["lsattr", "--", safe_path],
                 capture_output=True,
@@ -109,7 +109,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         """
         if isinstance(attributes, str):
             attributes = [attributes]
-        safe_path = str(self.file.absolute()) if hasattr(self.file, "absolute") else str(Path(self.file).absolute())
+        safe_path = str(Path(self.file).absolute())
         for attr in attributes:
             try:
                 # attr should be just the name, we add + or - based on enable
@@ -203,7 +203,7 @@ class FileAttributesLinux(_FileAttributesUnix):
         import json
 
         try:
-            safe_path = str(file_path.absolute()) if hasattr(file_path, "absolute") else str(Path(file_path).absolute())
+            safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
                 ["rclone", "lsjson", "--", safe_path],
                 capture_output=True,
@@ -222,7 +222,7 @@ class FileAttributesLinux(_FileAttributesUnix):
     def is_onedrive_file_in_cloud(file_path: Path) -> bool:
         """Check if OneDrive managed file is in the cloud."""
         try:
-            safe_path = str(file_path.absolute()) if hasattr(file_path, "absolute") else str(Path(file_path).absolute())
+            safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
                 ["xattr", "-l", "--", safe_path],
                 capture_output=True,
