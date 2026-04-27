@@ -49,6 +49,9 @@ dev = [
 ## #####
 # TOOL #
 ## #####
+[project.scripts]
+file-attributes = "file_attributes.cli:main"
+
 [tool.hatch]
 build.targets.wheel.packages = [ "src/file_attributes" ]
 

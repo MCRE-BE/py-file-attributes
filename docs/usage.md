@@ -7,6 +7,29 @@ hide:
 
 `py-file-attributes` dynamically provides the correct handler based on your operating system.
 
+## Command Line Interface (CLI)
+
+The package provides a built-in CLI command, `file-attributes`, which allows you to view or change file attributes directly from the terminal.
+
+### View attributes
+To see all properties for a specific file, simply pass its path:
+```sh
+file-attributes path/to/file.txt
+```
+
+### Change attributes
+You can set or unset supported attributes using boolean flags:
+```sh
+file-attributes example.txt --hidden True
+file-attributes example.txt --read_only False
+```
+
+### Help Menu
+To see which flags are available on your current operating system, use the `--help` flag. The help menu will display detailed descriptions for each available attribute:
+```sh
+file-attributes --help
+```
+
 ## Basic Operations
 
 You can set and get common attributes that are available across all platforms.

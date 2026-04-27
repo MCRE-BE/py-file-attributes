@@ -8,6 +8,24 @@ A cross-platform library to manage file attributes on Windows, macOS, and Linux.
 - Supports Windows, macOS, and Linux.
 - Easy-to-use API.
 
+## CLI Usage
+
+The package comes with a command-line interface to easily view or manage attributes for a given file.
+
+```sh
+# View attributes of a file
+file-attributes example.txt
+
+# Set or unset an attribute (pass True/1 or False/0)
+file-attributes example.txt --hidden True
+file-attributes example.txt --read_only False
+```
+
+You can view all available flags for your operating system using:
+```sh
+file-attributes --help
+```
+
 ## Installation
 
 You can install the library using pip:
