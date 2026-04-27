@@ -7,7 +7,7 @@ requires = [ "hatchling" ]
 ## #########
 [project]
 name = "py-file-attributes"
-version = "1.0.0"
+version = "1.0.2"
 description = "A cross-platform library to manage file attributes on Windows, macOS, and Linux."
 readme = "README.md"
 license-files = [ "LICENSE" ]
@@ -40,17 +40,15 @@ optional-dependencies.docs = [
 optional-dependencies.test = [
   "pytest>0",
 ]
+## #####
+# TOOL #
+## #####
+scripts.file-attributes = "file_attributes.cli:main"
 
 [dependency-groups]
 dev = [
   "py-file-attributes[dev,docs,test]",
 ]
-
-## #####
-# TOOL #
-## #####
-[project.scripts]
-file-attributes = "file_attributes.cli:main"
 
 [tool.hatch]
 build.targets.wheel.packages = [ "src/file_attributes" ]
