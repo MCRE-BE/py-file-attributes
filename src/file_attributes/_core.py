@@ -6,7 +6,6 @@
 import dataclasses
 import stat
 from abc import ABC, abstractmethod
-from functools import cached_property
 from pathlib import Path
 
 from typing_extensions import Self
@@ -25,14 +24,6 @@ class _FileAttributesCore:
         """Initialize the FileAttributes instance."""
         if isinstance(self.file, str):
             self.file = Path(self.file)
-
-    @cached_property
-    def _cached_property_fields(self) -> tuple[str, ...]:
-        """Cache the property fields for the instance."""
-        my_class = type(self)
-        return tuple(
-            attr for attr, value in vars(my_class).items() if isinstance(value, property) and value.fget is not None
-        )
 
     # ... Helper Methods ...
     @staticmethod
@@ -54,9 +45,13 @@ class _FileAttributesCore:
                 return my_class._cached_property_fields
             my_class = type(my_class)
 
-        return tuple(
-            attr for attr, value in vars(my_class).items() if isinstance(value, property) and value.fget is not None
-        )
+        # Iterate over MRO to get all properties including inherited ones
+        properties = set()
+        for cls in my_class.__mro__:
+            for attr, value in vars(cls).items():
+                if isinstance(value, property) and value.fget is not None:
+                    properties.add(attr)
+        return tuple(properties)
 
 
 @dataclasses.dataclass(repr=False)
@@ -81,36 +76,6 @@ class _FileAttributesUnix(_FileAttributesCore, ABC):
         super().__post_init__()
         self.mode = self.file.stat().st_mode
         self.extended_attributes = self.get_file_attributes(self.file)
-
-    def __repr__(self: Self) -> str:
-        """Return a string representation of the file attributes.
-
-        Returns
-        -------
-        str
-            A string representation of the file attributes.
-        """
-        result = f"{self.file.as_posix()}\n"
-        result += f"mode : {oct(self.mode)}\n"
-        result += f"extended_attributes : {self.extended_attributes}\n"
-        return result
-
-    def __str__(self: Self) -> str:
-        """Return a detailed string representation of the file attributes.
-
-        Returns
-        -------
-        str
-            A detailed string representation of the file attributes.
-        """
-        result = f"{self.file.as_posix()}\n"
-        result += f"mode : {oct(self.mode)}\n"
-        result += f"extended_attributes : {self.extended_attributes}\n"
-
-        attributes = self.get_property_fields(self)
-        for attr in attributes:
-            result += f"{attr}: {getattr(self, attr)}\n"
-        return result
 
     # ... Helper Methods ...
     @staticmethod
