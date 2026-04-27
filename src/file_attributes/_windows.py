@@ -100,6 +100,39 @@ class FileAttributesWindows(_FileAttributesCore):
     set_recall_on_data_access
     """
 
+    # ... Magic Methods ...
+    def __repr__(self: Self) -> str:
+        """Return a string representation of the file attributes.
+
+        Returns
+        -------
+        str
+            A string representation of the file attributes.
+        """
+        result = f"{self.file.as_posix()}\n"
+        result += f"bin : {bin(self.raw_attribute_mask)}\n"
+        result += f"int : {int(self.raw_attribute_mask)}\n"
+        result += f"hex : {hex(self.raw_attribute_mask)}\n"
+        return result
+
+    def __str__(self: Self) -> str:
+        """Return a detailed string representation of the file attributes.
+
+        Returns
+        -------
+        str
+            A detailed string representation of the file attributes.
+        """
+        result = f"{self.file.as_posix()}\n"
+        result += f"bin : {bin(self.raw_attribute_mask)}\n"
+        result += f"int : {int(self.raw_attribute_mask)}\n"
+        result += f"hex : {hex(self.raw_attribute_mask)}\n"
+
+        attributes = self.get_property_fields(self)
+        for attr in attributes:
+            result += f"{attr}: {getattr(self, attr)}\n"
+        return result
+
     # ... Helper Methods
     @staticmethod
     def get_file_attributes(path: Path) -> int:
