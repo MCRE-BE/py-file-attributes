@@ -82,8 +82,7 @@ class FileAttributesLinux(_FileAttributesUnix):
             The extended file attributes as a string.
         """
         try:
-            # Absolute path prevents argument injection and works across utilities
-            safe_path = str(path.absolute())
+            safe_path = str(Path(path).absolute())
             result = subprocess.run(
                 ["lsattr", "--", safe_path],
                 capture_output=True,
