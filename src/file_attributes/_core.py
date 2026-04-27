@@ -6,6 +6,7 @@
 import dataclasses
 import stat
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
 
 from typing_extensions import Self
@@ -25,6 +26,79 @@ class _FileAttributesCore:
         if isinstance(self.file, str):
             self.file = Path(self.file)
 
+    def __repr__(self: Self) -> str:
+        """Return a string representation of the file attributes.
+
+        Returns
+        -------
+        str
+            A string representation of the file attributes.
+        """
+        from pprint import pformat
+
+        attributes = self.get_property_fields(self)
+        nodes = {attr: getattr(self, attr) for attr in attributes}
+        # cluster them: True first, then False, sorted alphabetically
+        sorted_nodes = {k: nodes[k] for k in sorted(nodes.keys(), key=lambda x: (not nodes[x], x))}
+        return f"{self.__class__.__name__}(\n {pformat(sorted_nodes, sort_dicts=False, indent=2)}\n)"
+
+    def __str__(self: Self) -> str:
+        """Return a detailed string representation of the file attributes.
+
+        Returns
+        -------
+        str
+            A detailed string representation of the file attributes.
+        """
+        res = []
+        res.append(f"File: {self.file.as_posix()}")
+
+        if hasattr(self, "mode"):
+            res.append(f"mode                : {oct(int(str(self.mode)))}")
+        if hasattr(self, "extended_attributes"):
+            res.append(f"extended_attributes : {self.extended_attributes}")
+        if hasattr(self, "raw_attribute_mask"):
+            val = self.raw_attribute_mask
+            val_int = int(str(val))
+            res.append(f"raw_attribute_mask  : {bin(val_int)} | {int(val_int)} | {hex(val_int)}")
+
+        attributes = self.get_property_fields(self)
+        enabled = []
+        disabled = []
+        for attr in attributes:
+            if getattr(self, attr):
+                enabled.append(attr)
+            else:
+                disabled.append(attr)
+
+        enabled.sort()
+        disabled.sort()
+
+        max_len = max((len(a) for a in attributes), default=0)
+        max_len = max(max_len, len("Attribute"))
+
+        header = f"| {'Attribute'.ljust(max_len)} | Value |"
+        res.append("-" * len(header))
+        res.append(header)
+        res.append("-" * len(header))
+
+        res.extend(f"| {attr.ljust(max_len)} | True  |" for attr in enabled)
+        res.extend(f"| {attr.ljust(max_len)} | False |" for attr in disabled)
+        res.append("-" * len(header))
+
+        return "\n".join(res)
+
+    @cached_property
+    def _cached_property_fields(self) -> tuple[str, ...]:
+        """Cache the property fields for the instance."""
+        my_class = type(self)
+        properties = set()
+        for cls in my_class.__mro__:
+            for attr, value in vars(cls).items():
+                if isinstance(value, property) and value.fget is not None:
+                    properties.add(attr)
+        return tuple(properties)
+
     # ... Helper Methods ...
     @staticmethod
     def get_property_fields(my_class) -> tuple[str, ...]:
@@ -38,8 +112,6 @@ class _FileAttributesCore:
         --------
         https://stackoverflow.com/a/49943617/20716078
         """
-        # Check that we give the uninstantiated class or that we get the head class.
-        # If we don't do it, we don't get all the attributes
         if not isinstance(my_class, type):
             if hasattr(my_class, "_cached_property_fields"):
                 return my_class._cached_property_fields

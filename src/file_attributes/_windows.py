@@ -100,7 +100,6 @@ class FileAttributesWindows(_FileAttributesCore):
     set_recall_on_data_access
     """
 
-    # ... Magic Methods ...
     # ... Helper Methods
     @staticmethod
     def get_file_attributes(path: Path) -> int:
