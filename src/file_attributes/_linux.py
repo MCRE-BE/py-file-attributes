@@ -110,12 +110,12 @@ class FileAttributesLinux(_FileAttributesUnix):
         """
         if isinstance(attributes, str):
             attributes = [attributes]
-        safe_file_path = str(self.file.absolute())
+        safe_path = str(Path(self.file).absolute())
         for attr in attributes:
             try:
                 # attr should be just the name, we add + or - based on enable
                 cmd = f"{'+' if enable else '-'}{attr}"
-                subprocess.run(["sudo", "chattr", cmd, "--", safe_file_path], check=True)
+                subprocess.run(["sudo", "chattr", cmd, "--", safe_path], check=True)
             except subprocess.CalledProcessError as e:  # noqa: PERF203
                 raise ValueError(f"Failed to set attribute: {attr}") from e
             except FileNotFoundError as e:
@@ -204,9 +204,9 @@ class FileAttributesLinux(_FileAttributesUnix):
         import json
 
         try:
-            safe_file_path = str(Path(file_path).absolute())
+            safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
-                ["rclone", "lsjson", "--", safe_file_path],
+                ["rclone", "lsjson", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -223,9 +223,9 @@ class FileAttributesLinux(_FileAttributesUnix):
     def is_onedrive_file_in_cloud(file_path: Path) -> bool:
         """Check if OneDrive managed file is in the cloud."""
         try:
-            safe_file_path = str(Path(file_path).absolute())
+            safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
-                ["xattr", "-l", "--", safe_file_path],
+                ["xattr", "-l", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
