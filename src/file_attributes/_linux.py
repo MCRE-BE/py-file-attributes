@@ -62,38 +62,6 @@ class FileAttributesLinux(_FileAttributesUnix):
 
     """
 
-    # ... Magic Methods ...
-    def __repr__(self: Self) -> str:
-        """Return a string representation of the file attributes.
-
-        Returns
-        -------
-        str
-            A string representation of the file attributes.
-        """
-        result = f"{self.file.as_posix()}\n"
-        result += f"mode : {oct(self.mode)}\n"
-        result += f"extended_attributes : {self.extended_attributes}\n"
-        return result
-
-    def __str__(self: Self) -> str:
-        """Return a detailed string representation of the file attributes.
-
-        Returns
-        -------
-        str
-            A detailed string representation of the file attributes.
-        """
-        result = f"{self.file.as_posix()}\n"
-        result += f"mode : {oct(self.mode)}\n"
-        result += f"extended_attributes : {self.extended_attributes}\n"
-
-        attributes = self.get_property_fields(self)
-        for attr in attributes:
-            result += f"{attr}: {getattr(self, attr)}\n"
-        return result
-
-    # ... Helper Methods ...
     @staticmethod
     def get_file_attributes(path: Path) -> str:
         """Retrieve the extended file attributes from the OS.
@@ -114,8 +82,9 @@ class FileAttributesLinux(_FileAttributesUnix):
             The extended file attributes as a string.
         """
         try:
+            safe_path = str(Path(path).absolute())
             result = subprocess.run(
-                ["lsattr", str(path)],
+                ["lsattr", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -140,11 +109,12 @@ class FileAttributesLinux(_FileAttributesUnix):
         """
         if isinstance(attributes, str):
             attributes = [attributes]
+        safe_path = str(Path(self.file).absolute())
         for attr in attributes:
             try:
                 # attr should be just the name, we add + or - based on enable
                 cmd = f"{'+' if enable else '-'}{attr}"
-                subprocess.run(["sudo", "chattr", cmd, str(self.file)], check=True)
+                subprocess.run(["sudo", "chattr", cmd, "--", safe_path], check=True)
             except subprocess.CalledProcessError as e:  # noqa: PERF203
                 raise ValueError(f"Failed to set attribute: {attr}") from e
             except FileNotFoundError as e:
@@ -233,8 +203,9 @@ class FileAttributesLinux(_FileAttributesUnix):
         import json
 
         try:
+            safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
-                ["rclone", "lsjson", str(file_path)],
+                ["rclone", "lsjson", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -251,8 +222,9 @@ class FileAttributesLinux(_FileAttributesUnix):
     def is_onedrive_file_in_cloud(file_path: Path) -> bool:
         """Check if OneDrive managed file is in the cloud."""
         try:
+            safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
-                ["xattr", "-l", str(file_path)],
+                ["xattr", "-l", "--", safe_path],
                 capture_output=True,
                 text=True,
                 check=True,
