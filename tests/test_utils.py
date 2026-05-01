@@ -29,6 +29,17 @@ def test_download_offline_files_sequential_empty():
         mock_download.assert_not_called()
 
 
+def test_download_offline_files_sequential_exception():
+    files = ["fake_file1.txt", Path("fake_file2.txt")]
+    mock_side_effect = [None, OSError("Sequential Error")]
+    with patch("file_attributes.utils.download_offline_file", side_effect=mock_side_effect) as mock_download:
+        with pytest.raises(OSError, match="Sequential Error"):
+            download_offline_files_sequential(files)
+        assert mock_download.call_count == 2
+        mock_download.assert_any_call(Path("fake_file1.txt"), 5, 10, "r+b")
+        mock_download.assert_any_call(Path("fake_file2.txt"), 5, 10, "r+b")
+
+
 def test_download_offline_file_retry_exhaustion():
     file_path = Path("fake_file.txt")
 
