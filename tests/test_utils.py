@@ -17,11 +17,32 @@ def test_download_offline_files_sequential_success():
     file_list = ["fake_file1.txt", Path("fake_file2.txt")]
 
     with patch("file_attributes.utils.download_offline_file") as mock_download:
+        download_offline_files_sequential(file_list)
+
+        assert mock_download.call_count == 2
+        mock_download.assert_any_call(Path("fake_file1.txt"), 5, 10, "r+b")
+        mock_download.assert_any_call(Path("fake_file2.txt"), 5, 10, "r+b")
+
+
+def test_download_offline_files_sequential_success_explicit_args():
+    file_list = ["fake_file1.txt", Path("fake_file2.txt")]
+
+    with patch("file_attributes.utils.download_offline_file") as mock_download:
         download_offline_files_sequential(file_list, RETRY_MAX=3, RETRY_DELAY=2, READ_MODE="r")
 
         assert mock_download.call_count == 2
         mock_download.assert_any_call(Path("fake_file1.txt"), 3, 2, "r")
         mock_download.assert_any_call(Path("fake_file2.txt"), 3, 2, "r")
+
+
+def test_download_offline_files_sequential_exception():
+    file_list = ["fake_file1.txt", Path("fake_file2.txt")]
+
+    with (
+        patch("file_attributes.utils.download_offline_file", side_effect=OSError("Sequential Error")),
+        pytest.raises(OSError, match="Sequential Error"),
+    ):
+        download_offline_files_sequential(file_list)
 
 
 def test_download_offline_files_sequential_empty():
@@ -110,15 +131,6 @@ def test_file_recall_manager_success():
             FileRecallManager.RETRY_DELAY,
             FileRecallManager.READ_MODE,
         )
-
-
-def test_download_offline_files_sequential():
-    files = ["fake_file1.txt", Path("fake_file2.txt")]
-    with patch("file_attributes.utils.download_offline_file") as mock_download:
-        download_offline_files_sequential(files)
-        assert mock_download.call_count == 2
-        mock_download.assert_any_call(Path("fake_file1.txt"), 5, 10, "r+b")
-        mock_download.assert_any_call(Path("fake_file2.txt"), 5, 10, "r+b")
 
 
 def test_download_offline_files_parallel_single_str():
