@@ -55,7 +55,7 @@ class SubDummyClass(DummyClass):
 
 
 def test_get_property_fields_with_inheritance():
-    """Test get_property_fields when passing a class with inheritance."""
+    """Test get_property_fields with a subclass to check MRO iteration."""
     properties = _FileAttributesCore.get_property_fields(SubDummyClass)
     assert set(properties) == {"property_field", "another_property", "sub_property"}
 
@@ -63,28 +63,36 @@ def test_get_property_fields_with_inheritance():
 def test_get_property_fields_with_cached_property():
     """Test get_property_fields uses _cached_property_fields if available."""
 
-    class DummyWithCache:
-        _cached_property_fields = ("prop1", "prop2")
+    class CachedPropsClass:
+        def __init__(self):
+            self._cached_property_fields = ("cached_prop1", "cached_prop2")
 
-    instance = DummyWithCache()
-    properties = _FileAttributesCore.get_property_fields(instance)
-    assert properties == ("prop1", "prop2")
-
-
-def test_core_cached_property_fields():
-    """Test _cached_property_fields on _FileAttributesCore instance."""
-    from pathlib import Path
-
-    class DummyCore(_FileAttributesCore):
         @property
-        def dummy_prop(self):
-            return True
+        def actual_prop(self):
+            return "actual_value"
 
-    instance = DummyCore(Path("dummy"))
+    instance = CachedPropsClass()
+    properties = _FileAttributesCore.get_property_fields(instance)
+    # Because it has _cached_property_fields, it should return that directly
+    assert set(properties) == {"cached_prop1", "cached_prop2"}
 
-    # _cached_property_fields should be populated
-    props = instance._cached_property_fields
-    assert "dummy_prop" in props
 
-    # get_property_fields should use the cache
-    assert _FileAttributesCore.get_property_fields(instance) == props
+def test_core_cached_property_fields(tmp_path):
+    """Test the actual _cached_property_fields implementation on _FileAttributesCore."""
+    dummy_file = tmp_path / "dummy.txt"
+    dummy_file.touch()
+
+    # Create a subclass to test _cached_property_fields
+    class MyAttributes(_FileAttributesCore):
+        @property
+        def my_prop(self):
+            return "value"
+
+    instance = MyAttributes(dummy_file)
+    # This should evaluate the cached property
+    properties = instance._cached_property_fields
+
+    assert "my_prop" in properties
+
+    # Check that get_property_fields uses the cache for this instance
+    assert _FileAttributesCore.get_property_fields(instance) == properties
