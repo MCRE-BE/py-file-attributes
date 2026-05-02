@@ -128,20 +128,65 @@ def test_download_offline_file_error_path():
             download_offline_file(file_path, RETRY_MAX=3, RETRY_DELAY=0)
 
 
-def test_file_recall_manager_success():
+def test_file_recall_manager_not_in_cloud():
     file_path = Path("fake_file.txt")
-    with (
-        patch("file_attributes.utils.FileAttributes"),
-        patch("file_attributes.utils.download_offline_file") as mock_download,
-    ):
+    with patch("file_attributes.utils.FileAttributes") as mock_file_attributes, patch("builtins.open") as mock_open:
+        mock_attrs = mock_file_attributes.return_value
+        mock_attrs.in_cloud = False
+
         with FileRecallManager(file_path) as f:
             assert f == file_path
-        mock_download.assert_called_once_with(
-            file_path,
-            FileRecallManager.RETRY_MAX,
-            FileRecallManager.RETRY_DELAY,
-            FileRecallManager.READ_MODE,
-        )
+
+        mock_open.assert_not_called()
+
+
+def test_file_recall_manager_retry_exhaustion():
+    file_path = Path("fake_file.txt")
+
+    with (
+        patch("file_attributes.utils.FileAttributes") as mock_file_attributes,
+        patch("builtins.open", side_effect=OSError("Cloud error")),
+        patch("time.sleep") as mock_sleep,
+    ):
+        mock_attrs = mock_file_attributes.return_value
+        mock_attrs.in_cloud = True
+
+        expected_msg = f"Unable to retrieve {file_path.as_posix()} from cloud storage. Retry policy exceeded."
+        with pytest.raises(OSError, match=expected_msg), FileRecallManager(file_path):
+            pass
+
+        assert mock_sleep.call_count == FileRecallManager.RETRY_MAX - 1
+
+
+def test_file_recall_manager_success_after_retry():
+    file_path = Path("fake_file.txt")
+
+    mock_open = MagicMock(side_effect=[OSError("Cloud error"), OSError("Cloud error"), MagicMock()])
+
+    with (
+        patch("file_attributes.utils.FileAttributes") as mock_file_attributes,
+        patch("builtins.open", mock_open),
+        patch("time.sleep") as mock_sleep,
+    ):
+        mock_attrs = mock_file_attributes.return_value
+        mock_attrs.in_cloud = True
+
+        with FileRecallManager(file_path) as f:
+            assert f == file_path
+
+        assert mock_open.call_count == 3
+        assert mock_sleep.call_count == 2
+
+
+def test_file_recall_manager_exception_propagation():
+    file_path = Path("fake_file.txt")
+
+    with patch("file_attributes.utils.FileAttributes") as mock_file_attributes, patch("builtins.open"):
+        mock_attrs = mock_file_attributes.return_value
+        mock_attrs.in_cloud = False
+
+        with pytest.raises(ValueError, match="Test exception propagation"), FileRecallManager(file_path):
+            raise ValueError("Test exception propagation")
 
 
 def test_download_offline_files_parallel_single_str():
