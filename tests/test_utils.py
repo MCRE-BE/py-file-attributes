@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, patch
@@ -153,3 +154,29 @@ def test_download_offline_files_parallel_multiple_exception():
 def test_download_offline_files_parallel_invalid_type():
     with pytest.raises(ValueError, match="Invalid type for to_download:"):
         download_offline_files_parallel(cast("list[str | Path]", 123))
+
+
+def test_download_offline_files_parallel_concurrent_execution():
+    files: list[str | Path] = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
+    barrier = threading.Barrier(4, timeout=2.0)
+
+    def mock_download(*args, **kwargs):
+        barrier.wait()
+
+    with patch("file_attributes.utils.download_offline_file", side_effect=mock_download) as mock_dl:
+        download_offline_files_parallel(files, max_workers=4)
+        assert mock_dl.call_count == 4
+
+
+def test_download_offline_files_parallel_custom_max_workers():
+    files: list[str | Path] = ["file1.txt", "file2.txt"]
+    with (
+        patch("file_attributes.utils.ThreadPoolExecutor") as mock_executor,
+        patch("file_attributes.utils.as_completed", return_value=[]),
+    ):
+        # Mock the context manager behavior
+        mock_executor.return_value.__enter__.return_value = MagicMock()
+
+        download_offline_files_parallel(files, max_workers=10)
+
+        mock_executor.assert_called_once_with(max_workers=10)
