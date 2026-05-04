@@ -82,7 +82,7 @@ def test_core_string_path():
 
         attrs = _FileAttributesCore(cast("Path", tmp.name))
         assert isinstance(attrs.file, Path)
-        assert attrs.file.as_posix() == tmp.name
+        assert str(attrs.file) == tmp.name
 
 
 def test_init_unsupported_platform():
