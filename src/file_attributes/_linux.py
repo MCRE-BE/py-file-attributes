@@ -115,7 +115,7 @@ class FileAttributesLinux(_FileAttributesUnix):
             try:
                 # attr should be just the name, we add + or - based on enable
                 cmd = f"{'+' if enable else '-'}{attr}"
-                subprocess.run(["sudo", "chattr", cmd, "--", safe_path], check=True)
+                subprocess.run(["chattr", cmd, "--", safe_path], check=True)
             except subprocess.CalledProcessError as e:  # noqa: PERF203
                 raise ValueError(f"Failed to set attribute: {attr}") from e
             except FileNotFoundError as e:

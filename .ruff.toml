@@ -65,7 +65,7 @@ ignore = [
       "TRY002", # raise-vanilla-class
       "TC004",  # runtime-import-in-type-checking-block
 
-      # Rules conflicting with ruff format or requiring large refactors, ignored for now
+      # todo : fix later
 
       "W191",
       "E111",
