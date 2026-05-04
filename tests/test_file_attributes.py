@@ -153,6 +153,15 @@ def test_in_cloud(temp_file):  # noqa: C901
         with patch("subprocess.run", side_effect=mock_run_side_effect_onedrive):
             assert file_attrs.in_cloud
 
+        with patch.object(
+            type(file_attrs),
+            "extended_attributes",
+            new_callable=PropertyMock,
+        ) as mock_extended:
+            mock_extended.return_value = ["dataless"]
+            assert file_attrs.dataless
+            assert file_attrs.in_cloud
+
     elif sys.platform == "linux":
 
         def mock_run_side_effect_rcloud(*args, **kwargs):

@@ -17,7 +17,13 @@ from typing_extensions import Self
 ###########
 @dataclasses.dataclass(repr=False, eq=True)  # As overwritten anyway (as a reminder)
 class _FileAttributesCore:
-    """Access the File metadata Attributes."""
+    """Access the File metadata Attributes.
+
+    Attributes
+    ----------
+    in_cloud: bool
+        Whether the file is stored in a cloud provider and not physically on the local disk.
+    """
 
     file: Path
 
@@ -140,6 +146,7 @@ class _FileAttributesUnix(_FileAttributesCore, ABC):
     immutable: bool
     append_only: bool
     no_dump: bool
+    in_cloud: bool
     """
 
     # ... Magic Methods ...
