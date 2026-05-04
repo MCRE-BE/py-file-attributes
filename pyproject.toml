@@ -48,7 +48,7 @@ scripts.file-attributes = "file_attributes.cli:main"
 [dependency-groups]
 dev = [
   "py-file-attributes[dev,docs,test]",
-  "pytest-cov>=7.1.0",
+  "pytest-cov>=7.1",
 ]
 
 [tool.hatch]
