@@ -1,5 +1,7 @@
 # File Attributes
 
+[![codecov](https://codecov.io/gh/MCRE-BE/py-file-attributes/branch/main/graph/badge.svg)](https://codecov.io/gh/MCRE-BE/py-file-attributes)
+
 A cross-platform library to manage file attributes on Windows, macOS, and Linux.
 
 ## Features
