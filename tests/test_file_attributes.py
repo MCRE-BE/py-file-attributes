@@ -154,11 +154,10 @@ def test_in_cloud(temp_file):  # noqa: C901
             assert file_attrs.in_cloud
 
         with patch.object(
-            type(file_attrs),
+            file_attrs,
             "extended_attributes",
-            new_callable=PropertyMock,
-        ) as mock_extended:
-            mock_extended.return_value = ["dataless"]
+            ["dataless"],
+        ):
             assert file_attrs.dataless
             assert file_attrs.in_cloud
 
