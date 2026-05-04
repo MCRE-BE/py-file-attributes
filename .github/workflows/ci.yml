@@ -52,13 +52,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
       - name: Run tests with coverage
+        if: matrix.python-version == '3.12'
         env:
-          COVERAGE_FILE: .coverage.${{ matrix.os }}.${{ matrix.python-version }}
+          COVERAGE_FILE: .coverage.${{ matrix.os }}
         run: uv run coverage run -m pytest tests/
+      - name: Run tests without coverage
+        if: matrix.python-version != '3.12'
+        run: uv run pytest tests/
       - name: Upload coverage data
+        if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
+          name: coverage-data-${{ matrix.os }}
           path: .coverage.*
           include-hidden-files: true
 
