@@ -323,6 +323,11 @@ def test_linux_error_handling(temp_file):
     ):
         file_attrs.set_file_attributes("i")
 
+    with patch.object(file_attrs, "set_file_attributes") as mock_set:
+        file_attrs.set_append_only(True)
+        file_attrs.set_no_dump(True)
+        assert mock_set.call_count == 2
+
 
 def test_windows_all_attributes(temp_file):
     """Test all windows specific attributes via mock to achieve full coverage."""
@@ -334,7 +339,7 @@ def test_windows_all_attributes(temp_file):
         ("read_only", "set_read_only"),
         ("hidden", "set_hidden"),
         ("system", None),
-        ("directory", None),
+        ("directory", "set_directory"),
         ("archive", "set_archive"),
         ("device", None),
         ("normal", "set_normal"),
