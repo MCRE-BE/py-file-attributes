@@ -1,6 +1,8 @@
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from file_attributes import FileAttributes
 from file_attributes._core import _FileAttributesCore
 
@@ -66,3 +68,34 @@ def test_file_attributes_repr_and_str():
         s = str(attrs)
         assert "File: " in s
         assert "Attribute" in s
+
+
+def test_core_string_path():
+    """Test initializing _FileAttributesCore with a string instead of a Path."""
+    import tempfile
+
+    from file_attributes._core import _FileAttributesCore
+
+    with tempfile.NamedTemporaryFile() as tmp:
+        # Pass the path as a string
+        from typing import cast
+
+        attrs = _FileAttributesCore(cast("Path", tmp.name))
+        assert isinstance(attrs.file, Path)
+        assert attrs.file.as_posix() == tmp.name
+
+
+def test_init_unsupported_platform():
+    """Test that __init__.py raises NotImplementedError on unsupported platforms."""
+    import sys
+    from unittest.mock import patch
+
+    with patch.object(sys, "platform", "unknown_os"):
+        # We need to reload the module to trigger the sys.platform check
+        import importlib
+
+        import file_attributes
+
+        with pytest.raises(NotImplementedError) as exc_info:
+            importlib.reload(file_attributes)
+        assert "Nothing implemented for unknown_os" in str(exc_info.value)
