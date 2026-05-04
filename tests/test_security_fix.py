@@ -1,9 +1,10 @@
-import subprocess
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import unittest
-from file_attributes._mac import FileAttributesMacOS
+from pathlib import Path
+from unittest.mock import patch
+
 from file_attributes._linux import FileAttributesLinux
+from file_attributes._mac import FileAttributesMacOS
+
 
 class TestSecurityFix(unittest.TestCase):
     def test_macos_no_sudo_in_set_file_attributes(self):
@@ -20,9 +21,9 @@ class TestSecurityFix(unittest.TestCase):
 
                     # Check all calls to subprocess.run
                     for call in mock_run.call_args_list:
-                        args, kwargs = call
+                        args, _ = call
                         cmd = args[0]
-                        self.assertNotIn("sudo", cmd, f"sudo found in macOS command: {cmd}")
+                        assert "sudo" not in cmd, f"sudo found in macOS command: {cmd}"
 
     def test_linux_no_sudo_in_set_file_attributes(self):
         with patch("subprocess.run") as mock_run:
@@ -38,9 +39,10 @@ class TestSecurityFix(unittest.TestCase):
 
                     # Check all calls to subprocess.run
                     for call in mock_run.call_args_list:
-                        args, kwargs = call
+                        args, _ = call
                         cmd = args[0]
-                        self.assertNotIn("sudo", cmd, f"sudo found in Linux command: {cmd}")
+                        assert "sudo" not in cmd, f"sudo found in Linux command: {cmd}"
+
 
 if __name__ == "__main__":
     unittest.main()
