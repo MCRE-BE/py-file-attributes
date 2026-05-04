@@ -258,3 +258,158 @@ def test_unix_specific_attributes(temp_file):
         if "Failed to set attribute" in str(e):
             pytest.skip(f"Environment does not support setting Unix specific attributes: {e}")
         raise
+
+
+def test_mac_error_handling(temp_file):
+    """Test macOS specific error handling for chflags/ls exceptions."""
+    import subprocess
+
+    from file_attributes._mac import FileAttributesMacOS
+
+    file_attrs = FileAttributesMacOS(temp_file)
+
+    # Test get_file_attributes exception
+    with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "ls")):
+        assert FileAttributesMacOS.get_file_attributes(temp_file) == []
+
+    # Test set_file_attributes FileNotFoundError
+    with (
+        patch("subprocess.run", side_effect=FileNotFoundError()),
+        pytest.raises(ImportError, match="chflags tool is not found"),
+    ):
+        file_attrs.set_file_attributes("uchg")
+
+    # Test set_file_attributes CalledProcessError
+    with (
+        patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "chflags")),
+        pytest.raises(ValueError, match="Failed to set attribute"),
+    ):
+        file_attrs.set_file_attributes("uchg")
+
+    # Test darwin major parsing exception and warning
+    with patch("platform.release", return_value="invalid_release"):
+        _ = file_attrs.in_cloud
+
+    with patch("platform.release", return_value="20.0.0"), patch("warnings.warn") as mock_warn:
+        _ = file_attrs.in_cloud
+        assert mock_warn.called
+
+
+def test_linux_error_handling(temp_file):
+    """Test Linux specific error handling for chattr/lsattr exceptions."""
+    import subprocess
+    from unittest.mock import MagicMock
+
+    from file_attributes._linux import FileAttributesLinux
+
+    with patch("subprocess.run", return_value=MagicMock(stdout="", returncode=0)):
+        file_attrs = FileAttributesLinux(temp_file)
+
+    # Test get_file_attributes exception
+    with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "lsattr")):
+        assert FileAttributesLinux.get_file_attributes(temp_file) == ""
+
+    # Test set_file_attributes FileNotFoundError
+    with (
+        patch("subprocess.run", side_effect=FileNotFoundError()),
+        pytest.raises(ImportError, match="chattr tool is not found"),
+    ):
+        file_attrs.set_file_attributes("i")
+
+    # Test set_file_attributes CalledProcessError
+    with (
+        patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "chattr")),
+        pytest.raises(ValueError, match="Failed to set attribute"),
+    ):
+        file_attrs.set_file_attributes("i")
+
+    with patch.object(file_attrs, "set_file_attributes") as mock_set:
+        file_attrs.set_append_only(True)
+        file_attrs.set_no_dump(True)
+        assert mock_set.call_count == 2
+
+
+def test_windows_all_attributes(temp_file):
+    """Test all windows specific attributes via mock to achieve full coverage."""
+    from file_attributes._windows import FileAttributesWindows
+
+    file_attrs = FileAttributesWindows(temp_file)
+
+    attributes_to_test = [
+        ("read_only", "set_read_only"),
+        ("hidden", "set_hidden"),
+        ("system", None),
+        ("directory", "set_directory"),
+        ("archive", "set_archive"),
+        ("device", None),
+        ("normal", "set_normal"),
+        ("temporary", "set_temporary"),
+        ("sparse", "set_sparse"),
+        ("reparse", "set_reparse"),
+        ("compressed", "set_compressed"),
+        ("offline", None),
+        ("not_content_indexed", "set_not_content_indexed"),
+        ("encrypted", "set_encrypted"),
+        ("integrity_stream", "set_integrity_stream"),
+        ("virtual", "set_virtual"),
+        ("no_scrub_data", "set_no_scrub_data"),
+        ("pinned", "set_pinned"),
+        ("unpinned", "set_unpinned"),
+        ("recall_on_open", "set_recall_on_open"),
+        ("recall_on_data_access", "set_recall_on_data_access"),
+    ]
+
+    with patch.object(file_attrs, "set_attribute") as mock_set:
+        for attr, setter_name in attributes_to_test:
+            # Test getter using a mocked raw_attribute_mask
+            with patch.object(FileAttributesWindows, "raw_attribute_mask", new_callable=PropertyMock) as mock_mask:
+                mock_mask.return_value = 0xFFFFFFFF  # Set all bits to 1
+                assert getattr(file_attrs, attr) is True
+
+            # Test setter if it exists
+            if setter_name:
+                setter = getattr(file_attrs, setter_name)
+                setter(True)
+                setter(False)
+        assert mock_set.call_count > 0
+
+
+def test_mac_is_onedrive_exception(temp_file):
+    """Test exception block in is_onedrive_file_in_cloud for Mac."""
+    import subprocess
+
+    from file_attributes._mac import FileAttributesMacOS
+
+    with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "xattr")):
+        assert not FileAttributesMacOS.is_onedrive_file_in_cloud(temp_file)
+
+
+def test_core_setters_coverage(temp_file):
+    """Ensure set_executable, set_immutable, set_append_only, set_no_dump are hit without permission bounds."""
+    from file_attributes._core import _FileAttributesUnix
+
+    # Create a dummy subclass to test abstract methods
+    class DummyUnixAttrs(_FileAttributesUnix):
+        @staticmethod
+        def get_file_attributes(path):
+            _ = path
+            return []
+
+        def set_file_attributes(self, attributes, enable=True):
+            _ = attributes
+            _ = enable
+
+        def set_attribute(self, attribute, enable):
+            _ = attribute
+            _ = enable
+
+    file_attrs = DummyUnixAttrs(temp_file)
+    with patch.object(file_attrs, "set_attribute") as mock_set_attr:
+        file_attrs.set_executable(True)
+        assert mock_set_attr.called
+
+    with patch.object(file_attrs, "set_file_attributes") as mock_set_file_attrs:
+        file_attrs.set_immutable(True)
+        file_attrs.set_append_only(True)
+        file_attrs.set_no_dump(True)
+        assert mock_set_file_attrs.call_count == 3
