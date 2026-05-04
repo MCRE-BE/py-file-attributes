@@ -6,13 +6,13 @@ from pathlib import Path
 from file_attributes import FileAttributes
 
 
-def str2bool(v: str | bool) -> bool:
+def str2bool(v: str) -> bool:
     """Convert string to boolean.
 
     Parameters
     ----------
-    v : str | bool
-        The string or boolean to convert.
+    v : str
+        The string to convert.
 
     Returns
     -------
