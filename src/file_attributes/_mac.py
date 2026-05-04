@@ -119,17 +119,22 @@ class FileAttributesMacOS(_FileAttributesUnix):
         for attr in attributes:
             # We use absolute path to prevent argument injection instead of `--`
             # since `chflags` on macOS does not support `--` as a separator.
-            if enable:
-                subprocess.run(
-                    ["sudo", "chflags", attr, safe_path],
-                    check=True,
-                )
-            else:
-                disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
-                subprocess.run(
-                    ["sudo", "chflags", disable_attr, safe_path],
-                    check=True,
-                )
+            try:
+                if enable:
+                    subprocess.run(
+                        ["chflags", attr, safe_path],
+                        check=True,
+                    )
+                else:
+                    disable_attr = attr[2:] if attr.startswith("no") else "no" + attr
+                    subprocess.run(
+                        ["chflags", disable_attr, safe_path],
+                        check=True,
+                    )
+            except subprocess.CalledProcessError as e:  # noqa: PERF203
+                raise ValueError(f"Failed to set attribute: {attr}") from e
+            except FileNotFoundError as e:
+                raise ImportError("chflags tool is not found. Please ensure it is installed on your system.") from e
         self.extended_attributes = self.get_file_attributes(self.file)
 
     def set_attribute(

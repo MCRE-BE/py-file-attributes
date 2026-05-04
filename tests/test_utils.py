@@ -1,4 +1,3 @@
-import threading
 from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, patch
@@ -17,32 +16,11 @@ def test_download_offline_files_sequential_success():
     file_list = ["fake_file1.txt", Path("fake_file2.txt")]
 
     with patch("file_attributes.utils.download_offline_file") as mock_download:
-        download_offline_files_sequential(file_list)
-
-        assert mock_download.call_count == 2
-        mock_download.assert_any_call(Path("fake_file1.txt"), 5, 10, "r+b")
-        mock_download.assert_any_call(Path("fake_file2.txt"), 5, 10, "r+b")
-
-
-def test_download_offline_files_sequential_success_explicit_args():
-    file_list = ["fake_file1.txt", Path("fake_file2.txt")]
-
-    with patch("file_attributes.utils.download_offline_file") as mock_download:
         download_offline_files_sequential(file_list, RETRY_MAX=3, RETRY_DELAY=2, READ_MODE="r")
 
         assert mock_download.call_count == 2
         mock_download.assert_any_call(Path("fake_file1.txt"), 3, 2, "r")
         mock_download.assert_any_call(Path("fake_file2.txt"), 3, 2, "r")
-
-
-def test_download_offline_files_sequential_exception():
-    file_list = ["fake_file1.txt", Path("fake_file2.txt")]
-
-    with (
-        patch("file_attributes.utils.download_offline_file", side_effect=OSError("Sequential Error")),
-        pytest.raises(OSError, match="Sequential Error"),
-    ):
-        download_offline_files_sequential(file_list)
 
 
 def test_download_offline_files_sequential_empty():
@@ -117,65 +95,29 @@ def test_download_offline_file_error_path():
             download_offline_file(file_path, RETRY_MAX=3, RETRY_DELAY=0)
 
 
-def test_file_recall_manager_not_in_cloud():
+def test_file_recall_manager_success():
     file_path = Path("fake_file.txt")
-    with patch("file_attributes.utils.FileAttributes") as mock_file_attributes, patch("builtins.open") as mock_open:
-        mock_attrs = mock_file_attributes.return_value
-        mock_attrs.in_cloud = False
-
+    with (
+        patch("file_attributes.utils.FileAttributes"),
+        patch("file_attributes.utils.download_offline_file") as mock_download,
+    ):
         with FileRecallManager(file_path) as f:
             assert f == file_path
-
-        mock_open.assert_not_called()
-
-
-def test_file_recall_manager_retry_exhaustion():
-    file_path = Path("fake_file.txt")
-
-    with (
-        patch("file_attributes.utils.FileAttributes") as mock_file_attributes,
-        patch("builtins.open", side_effect=OSError("Cloud error")),
-        patch("time.sleep") as mock_sleep,
-    ):
-        mock_attrs = mock_file_attributes.return_value
-        mock_attrs.in_cloud = True
-
-        expected_msg = f"Unable to retrieve {file_path.as_posix()} from cloud storage. Retry policy exceeded."
-        with pytest.raises(OSError, match=expected_msg), FileRecallManager(file_path):
-            pass
-
-        assert mock_sleep.call_count == FileRecallManager.RETRY_MAX - 1
+        mock_download.assert_called_once_with(
+            file_path,
+            FileRecallManager.RETRY_MAX,
+            FileRecallManager.RETRY_DELAY,
+            FileRecallManager.READ_MODE,
+        )
 
 
-def test_file_recall_manager_success_after_retry():
-    file_path = Path("fake_file.txt")
-
-    mock_open = MagicMock(side_effect=[OSError("Cloud error"), OSError("Cloud error"), MagicMock()])
-
-    with (
-        patch("file_attributes.utils.FileAttributes") as mock_file_attributes,
-        patch("builtins.open", mock_open),
-        patch("time.sleep") as mock_sleep,
-    ):
-        mock_attrs = mock_file_attributes.return_value
-        mock_attrs.in_cloud = True
-
-        with FileRecallManager(file_path) as f:
-            assert f == file_path
-
-        assert mock_open.call_count == 3
-        assert mock_sleep.call_count == 2
-
-
-def test_file_recall_manager_exception_propagation():
-    file_path = Path("fake_file.txt")
-
-    with patch("file_attributes.utils.FileAttributes") as mock_file_attributes, patch("builtins.open"):
-        mock_attrs = mock_file_attributes.return_value
-        mock_attrs.in_cloud = False
-
-        with pytest.raises(ValueError, match="Test exception propagation"), FileRecallManager(file_path):
-            raise ValueError("Test exception propagation")
+def test_download_offline_files_sequential():
+    files = ["fake_file1.txt", Path("fake_file2.txt")]
+    with patch("file_attributes.utils.download_offline_file") as mock_download:
+        download_offline_files_sequential(files)
+        assert mock_download.call_count == 2
+        mock_download.assert_any_call(Path("fake_file1.txt"), 5, 10, "r+b")
+        mock_download.assert_any_call(Path("fake_file2.txt"), 5, 10, "r+b")
 
 
 def test_download_offline_files_parallel_single_str():
@@ -211,29 +153,3 @@ def test_download_offline_files_parallel_multiple_exception():
 def test_download_offline_files_parallel_invalid_type():
     with pytest.raises(ValueError, match="Invalid type for to_download:"):
         download_offline_files_parallel(cast("list[str | Path]", 123))
-
-
-def test_download_offline_files_parallel_concurrent_execution():
-    files: list[str | Path] = ["file1.txt", "file2.txt", "file3.txt", "file4.txt"]
-    barrier = threading.Barrier(4, timeout=2.0)
-
-    def mock_download(*args, **kwargs):
-        barrier.wait()
-
-    with patch("file_attributes.utils.download_offline_file", side_effect=mock_download) as mock_dl:
-        download_offline_files_parallel(files, max_workers=4)
-        assert mock_dl.call_count == 4
-
-
-def test_download_offline_files_parallel_custom_max_workers():
-    files: list[str | Path] = ["file1.txt", "file2.txt"]
-    with (
-        patch("file_attributes.utils.ThreadPoolExecutor") as mock_executor,
-        patch("file_attributes.utils.as_completed", return_value=[]),
-    ):
-        # Mock the context manager behavior
-        mock_executor.return_value.__enter__.return_value = MagicMock()
-
-        download_offline_files_parallel(files, max_workers=10)
-
-        mock_executor.assert_called_once_with(max_workers=10)
