@@ -7,7 +7,9 @@
 ####################
 import dataclasses
 import os
+import platform
 import subprocess
+import warnings
 from pathlib import Path
 
 from typing_extensions import Self
@@ -55,7 +57,18 @@ class FileAttributesMacOS(_FileAttributesUnix):
     +-------------+---------------------------------------------------------------------------------------------+
     | opaque      | Opaque: Marks the file or directory as opaque during union mounting.                         |
     +-------------+---------------------------------------------------------------------------------------------+
-
+    | dataless    | Dataless: The file is a placeholder for a cloud file managed by Apple's FileProvider API.    |
+    |             | It has not been physically downloaded to the local disk yet.                                 |
+    |             | Only available on macOS 12.1 (Monterey) and newer.                                           |
+    +-------------+---------------------------------------------------------------------------------------------+
+    | compressed  | Compressed: The file is compressed at the file-system level (HFS+/APFS).                     |
+    +-------------+---------------------------------------------------------------------------------------------+
+    | restricted  | Restricted: Entitlement required for writing (often used by System Integrity Protection).    |
+    +-------------+---------------------------------------------------------------------------------------------+
+    | datavault   | Data Vault: Entitlement required for reading (e.g., Apple's secure directories).             |
+    +-------------+---------------------------------------------------------------------------------------------+
+    | firmlink    | Firmlink: The file is a firmlink (used to link read-only system volumes to data volumes).    |
+    +-------------+---------------------------------------------------------------------------------------------+
 
     """
 
@@ -173,6 +186,11 @@ class FileAttributesMacOS(_FileAttributesUnix):
         """A file that should not be dumped."""
         return "nodump" in self.extended_attributes
 
+    @property
+    def dataless(self: Self) -> bool:
+        """A file that is managed by a cloud provider but not physically downloaded (dataless)."""
+        return "dataless" in self.extended_attributes
+
     # ... Setters ...
     def set_immutable(self: Self, enable: bool) -> None:
         """Set or unset the immutable attribute.
@@ -207,9 +225,25 @@ class FileAttributesMacOS(_FileAttributesUnix):
     # ... Add specific functions for cloud...
     @property
     def in_cloud(self: Self) -> bool:
+        # Darwin 21 is macOS 12 (Monterey). Pre-macOS 12 has limited FileProvider support.
+        try:
+            darwin_major = int(platform.release().split(".")[0])
+        except (ValueError, IndexError):
+            darwin_major = 21  # Assume modern if parsing fails
+
+        if darwin_major < 21:
+            warnings.warn(
+                "Cloud file detection (via 'dataless' flag) is not fully supported on macOS versions older than 12.1 (Monterey). "
+                "Google Drive and Dropbox cloud files might not be detected correctly. "
+                "Consider upgrading your macOS for full support.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         return any([
             self.is_icloud_file_in_cloud(self.file),
             self.is_onedrive_file_in_cloud(self.file),
+            self.dataless,
         ])
 
     @staticmethod
@@ -222,6 +256,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
                 capture_output=True,
                 text=True,
                 check=True,
+                errors="ignore",
             )
             # Check the output for indications that the file is in the cloud
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -239,6 +274,7 @@ class FileAttributesMacOS(_FileAttributesUnix):
                 capture_output=True,
                 text=True,
                 check=True,
+                errors="ignore",
             )
 
         except (subprocess.CalledProcessError, FileNotFoundError):
