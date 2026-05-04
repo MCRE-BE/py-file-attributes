@@ -38,6 +38,7 @@ optional-dependencies.docs = [
   "zensical",
 ]
 optional-dependencies.test = [
+  "coverage>=7.13.5",
   "pytest>0",
 ]
 ## #####

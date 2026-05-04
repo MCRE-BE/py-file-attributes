@@ -19,6 +19,7 @@
 - Find the CI plan in the .github/workflows folder.
 - Fix any test or type errors until the whole suite is green.
 - Add or update tests for the code you change, even if nobody asked.
+- **Coverage Note**: Since this is a cross-platform library, running coverage locally (e.g., on macOS) will naturally skip files and tests meant for Windows or Linux, leading to artificially lower coverage scores locally. Do not attempt to achieve 100% local coverage. Instead, rely on the CI pipeline (`.github/workflows/ci.yml`), which tests across all OS platforms and aggregates the coverage results to 100%.
 
 ## PR instructions
 - Use **Conventional Commits** in commits and PR's. This means to format them as <type>[optional scope]: <description>
