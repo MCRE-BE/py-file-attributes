@@ -435,3 +435,29 @@ def test_linux_is_onedrive_exception(temp_file):
 
     with patch("subprocess.run", side_effect=FileNotFoundError()):
         assert not FileAttributesLinux.is_onedrive_file_in_cloud(temp_file)
+
+
+def test_mac_is_icloud_exception(temp_file):
+    """Test exception block in is_icloud_file_in_cloud for Mac."""
+    import subprocess
+
+    from file_attributes._mac import FileAttributesMacOS
+
+    with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "brctl")):
+        assert not FileAttributesMacOS.is_icloud_file_in_cloud(temp_file)
+
+    with patch("subprocess.run", side_effect=FileNotFoundError()):
+        assert not FileAttributesMacOS.is_icloud_file_in_cloud(temp_file)
+
+
+def test_linux_is_rcloud_exception(temp_file):
+    """Test exception block in is_rcloud_file_in_cloud for Linux."""
+    import subprocess
+
+    from file_attributes._linux import FileAttributesLinux
+
+    with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "rclone")):
+        assert not FileAttributesLinux.is_rcloud_file_in_cloud(temp_file)
+
+    with patch("subprocess.run", side_effect=FileNotFoundError()):
+        assert not FileAttributesLinux.is_rcloud_file_in_cloud(temp_file)

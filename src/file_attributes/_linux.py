@@ -5,6 +5,7 @@
 # IMPORT STATEMENT #
 ####################
 import dataclasses
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -201,8 +202,6 @@ class FileAttributesLinux(_FileAttributesUnix):
     @staticmethod
     def is_rcloud_file_in_cloud(file_path: Path) -> bool:
         """Check if rcloud managed file is in the cloud."""
-        import json
-
         try:
             safe_path = str(Path(file_path).absolute())
             result = subprocess.run(
