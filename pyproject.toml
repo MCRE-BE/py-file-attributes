@@ -29,7 +29,7 @@ dependencies = [
 optional-dependencies.dev = [
   "prek",
   "ruff>=0.15.12",
-  "ty>0",
+  "ty>=0.0.36",
   "zensical",
 ]
 optional-dependencies.docs = [
