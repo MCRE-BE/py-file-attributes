@@ -109,7 +109,7 @@ def test_in_cloud_default(temp_file):
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific test")
 def test_in_cloud_windows(temp_file):
     """Test the `in_cloud` property on Windows."""
-    file_attrs = FileAttributes(temp_file)
+    file_attrs = cast("Any", FileAttributes(temp_file))
     with patch.object(
         type(file_attrs),
         "raw_attribute_mask",
@@ -122,7 +122,7 @@ def test_in_cloud_windows(temp_file):
 @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific test")
 def test_in_cloud_macos(temp_file):
     """Test the `in_cloud` property on macOS."""
-    file_attrs = FileAttributes(temp_file)
+    file_attrs = cast("Any", FileAttributes(temp_file))
 
     def mock_run_side_effect_icloud(*args, **kwargs):
         if "brctl" in args[0]:
@@ -270,10 +270,12 @@ def test_unix_specific_attributes(temp_file):
 def test_mac_error_handling(temp_file):
     """Test macOS specific error handling for chflags/ls exceptions."""
     import subprocess
+    from unittest.mock import MagicMock
 
     from file_attributes._mac import FileAttributesMacOS
 
-    file_attrs = FileAttributesMacOS(temp_file)
+    with patch("subprocess.run", return_value=MagicMock(stdout="", returncode=0)):
+        file_attrs = FileAttributesMacOS(temp_file)
 
     # Test get_file_attributes exception
     with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "ls")):
