@@ -11,6 +11,7 @@ import platform
 import subprocess
 import warnings
 from pathlib import Path
+from typing import ClassVar
 
 from typing_extensions import Self
 
@@ -72,6 +73,25 @@ class FileAttributesMacOS(_FileAttributesUnix):
 
     """
 
+    _ALLOWED_ATTRIBUTES: ClassVar[set[str]] = {
+        "arch",
+        "archived",
+        "compressed",
+        "dataless",
+        "datavault",
+        "firmlink",
+        "hidden",
+        "nodump",
+        "opaque",
+        "restricted",
+        "sappnd",
+        "schg",
+        "sunlnk",
+        "uappnd",
+        "uchg",
+        "uunlnk",
+    }
+
     # ... Helper Methods ...
     @staticmethod
     def get_file_attributes(path: Path) -> list[str]:
@@ -130,6 +150,10 @@ class FileAttributesMacOS(_FileAttributesUnix):
             attributes = [attributes]
         safe_path = str(Path(self.file).absolute())
         for attr in attributes:
+            if attr not in self._ALLOWED_ATTRIBUTES:
+                msg = f"Invalid or restricted attribute: {attr}"
+                raise ValueError(msg)
+
             # We use absolute path to prevent argument injection instead of `--`
             # since `chflags` on macOS does not support `--` as a separator.
             try:
@@ -144,10 +168,12 @@ class FileAttributesMacOS(_FileAttributesUnix):
                         ["chflags", disable_attr, safe_path],
                         check=True,
                     )
-            except subprocess.CalledProcessError as e:  # noqa: PERF203
-                raise ValueError(f"Failed to set attribute: {attr}") from e
+            except subprocess.CalledProcessError as e:
+                msg = f"Failed to set attribute: {attr}"
+                raise ValueError(msg) from e
             except FileNotFoundError as e:
-                raise ImportError("chflags tool is not found. Please ensure it is installed on your system.") from e
+                msg = "chflags tool is not found. Please ensure it is installed on your system."
+                raise ImportError(msg) from e
         self.extended_attributes = self.get_file_attributes(self.file)
 
     def set_attribute(
