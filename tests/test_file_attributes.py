@@ -100,14 +100,16 @@ def test_argument_injection():
         temp_path.unlink()
 
 
-def test_in_cloud_windows(temp_file):
-    """Test the `in_cloud` property on Windows."""
-    if sys.platform != "win32":
-        pytest.skip("Windows-specific test")
-
+def test_in_cloud_default(temp_file):
+    """Test the default state of `in_cloud` property."""
     file_attrs = FileAttributes(temp_file)
     assert not file_attrs.in_cloud
 
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific test")
+def test_in_cloud_windows(temp_file):
+    """Test the `in_cloud` property on Windows."""
+    file_attrs = cast("Any", FileAttributes(temp_file))
     with patch.object(
         type(file_attrs),
         "raw_attribute_mask",
@@ -117,13 +119,10 @@ def test_in_cloud_windows(temp_file):
         assert file_attrs.in_cloud
 
 
-def test_in_cloud_mac(temp_file):
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific test")
+def test_in_cloud_macos(temp_file):
     """Test the `in_cloud` property on macOS."""
-    if sys.platform != "darwin":
-        pytest.skip("macOS-specific test")
-
-    file_attrs = FileAttributes(temp_file)
-    assert not file_attrs.in_cloud
+    file_attrs = cast("Any", FileAttributes(temp_file))
 
     def mock_run_side_effect_icloud(*args, **kwargs):
         if "brctl" in args[0]:
@@ -166,13 +165,10 @@ def test_in_cloud_mac(temp_file):
         assert file_attrs.in_cloud
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux-specific test")
 def test_in_cloud_linux(temp_file):
     """Test the `in_cloud` property on Linux."""
-    if sys.platform != "linux":
-        pytest.skip("Linux-specific test")
-
     file_attrs = FileAttributes(temp_file)
-    assert not file_attrs.in_cloud
 
     def mock_run_side_effect_rcloud(*args, **kwargs):
         if "rclone" in args[0]:
