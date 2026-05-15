@@ -8,6 +8,7 @@ import stat
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
+from pprint import pformat
 
 from typing_extensions import Self
 
@@ -40,8 +41,6 @@ class _FileAttributesCore:
         str
             A string representation of the file attributes.
         """
-        from pprint import pformat
-
         attributes = self.get_property_fields(self)
         nodes = {attr: getattr(self, attr) for attr in attributes}
         # cluster them: True first, then False, sorted alphabetically
@@ -56,8 +55,13 @@ class _FileAttributesCore:
         str
             A detailed string representation of the file attributes.
         """
-        res = []
-        res.append(f"File: {self.file.as_posix()}")
+        res = self._get_header_info()
+        res.append(self._get_attribute_table())
+        return "\n".join(res)
+
+    def _get_header_info(self: Self) -> list[str]:
+        """Get the basic file information for the string representation."""
+        res = [f"File: {self.file.as_posix()}"]
 
         if hasattr(self, "mode"):
             res.append(f"mode                : {oct(int(str(self.mode)))}")
@@ -67,7 +71,10 @@ class _FileAttributesCore:
             val = self.raw_attribute_mask
             val_int = int(str(val))
             res.append(f"raw_attribute_mask  : {bin(val_int)} | {int(val_int)} | {hex(val_int)}")
+        return res
 
+    def _get_attribute_table(self: Self) -> str:
+        """Generate a table of attributes and their values."""
         attributes = self.get_property_fields(self)
         enabled = []
         disabled = []
@@ -84,9 +91,7 @@ class _FileAttributesCore:
         max_len = max(max_len, len("Attribute"))
 
         header = f"| {'Attribute'.ljust(max_len)} | Value |"
-        res.append("-" * len(header))
-        res.append(header)
-        res.append("-" * len(header))
+        res: list[str] = ["-" * len(header), header, "-" * len(header)]
 
         res.extend(f"| {attr.ljust(max_len)} | True  |" for attr in enabled)
         res.extend(f"| {attr.ljust(max_len)} | False |" for attr in disabled)
