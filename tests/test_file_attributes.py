@@ -413,3 +413,16 @@ def test_core_setters_coverage(temp_file):
         file_attrs.set_append_only(True)
         file_attrs.set_no_dump(True)
         assert mock_set_file_attrs.call_count == 3
+
+
+def test_linux_is_onedrive_exception(temp_file):
+    """Test exception block in is_onedrive_file_in_cloud for Linux."""
+    import subprocess
+
+    from file_attributes._linux import FileAttributesLinux
+
+    with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "xattr")):
+        assert not FileAttributesLinux.is_onedrive_file_in_cloud(temp_file)
+
+    with patch("subprocess.run", side_effect=FileNotFoundError()):
+        assert not FileAttributesLinux.is_onedrive_file_in_cloud(temp_file)
