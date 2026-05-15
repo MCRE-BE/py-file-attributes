@@ -100,106 +100,113 @@ def test_argument_injection():
         temp_path.unlink()
 
 
-def test_in_cloud(temp_file):  # noqa: C901
-    """Test the `in_cloud` property.
-
-    Notes
-    -----
-    Add placeholder logic to simulate a cloud-only file and test this attribute.
-    """
+def test_in_cloud_default(temp_file):
+    """Test the default state of `in_cloud` property."""
     file_attrs = FileAttributes(temp_file)
     assert not file_attrs.in_cloud
 
-    if sys.platform == "win32":
-        with patch.object(
-            type(file_attrs),
-            "raw_attribute_mask",
-            new_callable=PropertyMock,
-        ) as mock_raw:
-            mock_raw.return_value = 0x400000  # FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS
-            assert file_attrs.in_cloud
 
-    elif sys.platform == "darwin":
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific test")
+def test_in_cloud_windows(temp_file):
+    """Test the `in_cloud` property on Windows."""
+    file_attrs = FileAttributes(temp_file)
+    with patch.object(
+        type(file_attrs),
+        "raw_attribute_mask",
+        new_callable=PropertyMock,
+    ) as mock_raw:
+        mock_raw.return_value = 0x400000  # FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS
+        assert file_attrs.in_cloud
 
-        def mock_run_side_effect_icloud(*args, **kwargs):
-            if "brctl" in args[0]:
 
-                class MockResult:
-                    stdout = "status = evicted"
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific test")
+def test_in_cloud_macos(temp_file):
+    """Test the `in_cloud` property on macOS."""
+    file_attrs = FileAttributes(temp_file)
 
-                return MockResult()
+    def mock_run_side_effect_icloud(*args, **kwargs):
+        if "brctl" in args[0]:
 
-            class MockResultEmpty:
-                stdout = ""
+            class MockResult:
+                stdout = "status = evicted"
 
-            return MockResultEmpty()
+            return MockResult()
 
-        with patch("subprocess.run", side_effect=mock_run_side_effect_icloud):
-            assert file_attrs.in_cloud
+        class MockResultEmpty:
+            stdout = ""
 
-        def mock_run_side_effect_onedrive(*args, **kwargs):
-            if "xattr" in args[0]:
+        return MockResultEmpty()
 
-                class MockResult:
-                    stdout = "user.onedrive.hydrationState DEHYDRATED"
+    with patch("subprocess.run", side_effect=mock_run_side_effect_icloud):
+        assert file_attrs.in_cloud
 
-                return MockResult()
+    def mock_run_side_effect_onedrive(*args, **kwargs):
+        if "xattr" in args[0]:
 
-            class MockResultEmpty:
-                stdout = ""
+            class MockResult:
+                stdout = "user.onedrive.hydrationState DEHYDRATED"
 
-            return MockResultEmpty()
+            return MockResult()
 
-        with patch("subprocess.run", side_effect=mock_run_side_effect_onedrive):
-            assert file_attrs.in_cloud
+        class MockResultEmpty:
+            stdout = ""
 
-        with patch.object(
-            file_attrs,
-            "extended_attributes",
-            ["dataless"],
-        ):
-            assert file_attrs.dataless
-            assert file_attrs.in_cloud
+        return MockResultEmpty()
 
-    elif sys.platform == "linux":
+    with patch("subprocess.run", side_effect=mock_run_side_effect_onedrive):
+        assert file_attrs.in_cloud
 
-        def mock_run_side_effect_rcloud(*args, **kwargs):
-            if "rclone" in args[0]:
+    with patch.object(
+        file_attrs,
+        "extended_attributes",
+        ["dataless"],
+    ):
+        assert file_attrs.dataless
+        assert file_attrs.in_cloud
 
-                class MockResult:
-                    stdout = f'[{{"Path": "{temp_file}", "IsDir": false, "Size": 0}}]'
 
-                return MockResult()
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux-specific test")
+def test_in_cloud_linux(temp_file):
+    """Test the `in_cloud` property on Linux."""
+    file_attrs = FileAttributes(temp_file)
 
-            class MockResultEmpty:
-                stdout = ""
+    def mock_run_side_effect_rcloud(*args, **kwargs):
+        if "rclone" in args[0]:
 
-            return MockResultEmpty()
+            class MockResult:
+                stdout = f'[{{"Path": "{temp_file}", "IsDir": false, "Size": 0}}]'
 
-        with patch("subprocess.run", side_effect=mock_run_side_effect_rcloud):
-            assert file_attrs.in_cloud
+            return MockResult()
 
-        def mock_run_side_effect_onedrive_linux(*args, **kwargs):
-            if "xattr" in args[0]:
+        class MockResultEmpty:
+            stdout = ""
 
-                class MockResult:
-                    stdout = "user.onedrive.hydrationState DEHYDRATED"
+        return MockResultEmpty()
 
-                return MockResult()
-            if "rclone" in args[0]:
+    with patch("subprocess.run", side_effect=mock_run_side_effect_rcloud):
+        assert file_attrs.in_cloud
 
-                class MockResultJson:
-                    stdout = "[]"
+    def mock_run_side_effect_onedrive_linux(*args, **kwargs):
+        if "xattr" in args[0]:
 
-                return MockResultJson()
+            class MockResult:
+                stdout = "user.onedrive.hydrationState DEHYDRATED"
 
-            class MockResultEmpty:
-                stdout = ""
+            return MockResult()
+        if "rclone" in args[0]:
 
-            return MockResultEmpty()
+            class MockResultJson:
+                stdout = "[]"
 
-        with patch("subprocess.run", side_effect=mock_run_side_effect_onedrive_linux):
-            assert file_attrs.in_cloud
+            return MockResultJson()
+
+        class MockResultEmpty:
+            stdout = ""
+
+        return MockResultEmpty()
+
+    with patch("subprocess.run", side_effect=mock_run_side_effect_onedrive_linux):
+        assert file_attrs.in_cloud
 
 
 # ====================== #
